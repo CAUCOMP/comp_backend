@@ -1,4 +1,4 @@
-package com.comp.comp_web.config;
+package com.comp.comp_web.domain.auth;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
