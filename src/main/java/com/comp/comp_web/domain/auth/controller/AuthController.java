@@ -63,12 +63,17 @@ public class AuthController {
 
     @Operation(
         summary = "로그아웃",
-        description = "사용자의 모든 Refresh Token을 삭제합니다",
+        description = "사용자의 모든 Refresh Token을 삭제합니다. Authorization 헤더에 Bearer 토큰이 필요합니다.",
         security = @SecurityRequirement(name = "Bearer Authentication")
     )
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @AuthenticationPrincipal Long userId) {
+        if (userId == null) {
+            throw new com.comp.comp_web.global.exception.BusinessException(
+                com.comp.comp_web.global.response.ErrorCode.AUTH_003
+            );
+        }
         authService.logout(userId);
         return ResponseEntity.ok(ApiResponse.success());
     }
