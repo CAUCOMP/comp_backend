@@ -10,6 +10,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.stream.Collectors;
 
@@ -93,6 +94,22 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
+            .body(response);
+    }
+
+    // 정적 리소스 404 처리 (favicon.ico 등)
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResourceFoundException(NoResourceFoundException e) {
+        // favicon.ico 등 정적 리소스는 DEBUG 레벨로만 로깅
+        log.debug("Static resource not found: {}", e.getResourcePath());
+
+        ApiResponse<Void> response = ApiResponse.error(
+            ErrorCode.COMMON_005,
+            "요청한 리소스를 찾을 수 없습니다."
+        );
+
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
             .body(response);
     }
 
