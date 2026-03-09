@@ -55,4 +55,3 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         response.getWriter().write(json);
     }
 }
-
