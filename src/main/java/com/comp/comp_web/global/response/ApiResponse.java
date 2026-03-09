@@ -1,5 +1,6 @@
 package com.comp.comp_web.global.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AccessLevel;
@@ -17,6 +18,8 @@ public class ApiResponse<T> {
     private final boolean success;
     private final T data;
     private final ErrorDetail error;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private final LocalDateTime timestamp;
 
     // 성공 응답

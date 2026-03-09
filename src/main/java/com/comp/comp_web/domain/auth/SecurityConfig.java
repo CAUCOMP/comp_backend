@@ -53,6 +53,8 @@ public class SecurityConfig {
                     // Public 엔드포인트 (인증 불필요)
                     .requestMatchers(
                         ApiConstants.AUTH_API_PATTERN,        // 인증 관련 API (logout 제외)
+                        ApiConstants.HEALTH_API_PATTERN,      // Health Check API
+                        ApiConstants.HELLO_API_PATH,          // Hello API
                         ApiConstants.OPENAPI_DOCS_PATTERN,    // OpenAPI 문서
                         ApiConstants.OPENAPI_YAML_PATH,       // OpenAPI YAML
                         ApiConstants.SWAGGER_UI_PATTERN,      // Swagger UI 리소스
