@@ -31,13 +31,40 @@ git clone <repository-url>
 cd comp_backend
 ```
 
-### 2. Start Docker containers (MySQL & Redis)
+### 2. 환경변수 설정 (필수!)
+```bash
+# .env.example을 복사하여 .env 파일 생성
+cp .env.example .env
+
+# .env 파일을 열어 실제 값으로 수정
+# 자세한 내용은 ENVIRONMENT_VARIABLES_GUIDE.md 참조
+```
+
+**중요**: `.env` 파일에 다음 필수 환경변수를 설정해야 합니다:
+- `DB_PASSWORD`: MySQL 데이터베이스 비밀번호
+- `REDIS_PASSWORD`: Redis 비밀번호  
+- `JWT_SECRET`: JWT 서명 시크릿 키 (256비트 이상)
+
+자세한 설정 방법은 [ENVIRONMENT_VARIABLES_GUIDE.md](ENVIRONMENT_VARIABLES_GUIDE.md)를 참조하세요.
+
+### 3. Start Docker containers (MySQL & Redis)
 ```bash
 docker-compose up -d
 ```
 
-### 3. Run the application
+### 4. Run the application
+
+**IntelliJ IDEA에서 실행**:
+1. Run > Edit Configurations
+2. Environment variables에 `.env` 파일 내용 복사
+3. Run
+
+**터미널에서 실행**:
 ```bash
+# 환경변수 로드
+export $(cat .env | grep -v '^#' | xargs)
+
+# 애플리케이션 실행
 ./gradlew bootRun
 ```
 
@@ -46,16 +73,18 @@ docker-compose up -d
 ## 🗄 Database Configuration
 
 ### MySQL
-- **Host**: localhost
+- **Host**: localhost (기본값, `DB_URL`로 변경 가능)
 - **Port**: 3306
-- **Database**: comp
-- **Username**: comp
-- **Password**: comp2026!
+- **Database**: comp (기본값, `DB_URL`로 변경 가능)
+- **Username**: comp (기본값, `DB_USERNAME`으로 변경 가능)
+- **Password**: `.env` 파일의 `DB_PASSWORD`에서 설정
 
 ### Redis
-- **Host**: localhost
-- **Port**: 6379
-- **Password**: comp2026!
+- **Host**: localhost (기본값, `REDIS_HOST`로 변경 가능)
+- **Port**: 6379 (기본값, `REDIS_PORT`로 변경 가능)
+- **Password**: `.env` 파일의 `REDIS_PASSWORD`에서 설정
+
+**보안**: 민감한 정보는 `.env` 파일에서 관리합니다. 자세한 내용은 [ENVIRONMENT_VARIABLES_GUIDE.md](ENVIRONMENT_VARIABLES_GUIDE.md)를 참조하세요.
 
 ## 🏗 Build Commands
 
