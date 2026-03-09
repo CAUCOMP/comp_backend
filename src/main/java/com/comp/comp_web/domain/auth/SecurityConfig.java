@@ -1,6 +1,7 @@
 package com.comp.comp_web.domain.auth;
 
 import com.comp.comp_web.domain.auth.filter.JwtAuthenticationFilter;
+import com.comp.comp_web.global.constants.ApiConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -39,15 +40,15 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                     // Public 엔드포인트 (인증 불필요)
                     .requestMatchers(
-                        "/api/auth/**",              // 인증 관련 API
-                        "/v3/api-docs/**",           // OpenAPI 문서
-                        "/v3/api-docs.yaml",         // OpenAPI YAML
-                        "/swagger-ui/**",            // Swagger UI 리소스
-                        "/swagger-ui.html",          // Swagger UI 메인
-                        "/swagger-resources/**",     // Swagger 리소스
-                        "/webjars/**",               // WebJars (Swagger UI 의존성)
-                        "/favicon.ico",              // 파비콘
-                        "/error"                     // 에러 페이지
+                        ApiConstants.AUTH_API_PATTERN,        // 인증 관련 API
+                        ApiConstants.OPENAPI_DOCS_PATTERN,    // OpenAPI 문서
+                        ApiConstants.OPENAPI_YAML_PATH,       // OpenAPI YAML
+                        ApiConstants.SWAGGER_UI_PATTERN,      // Swagger UI 리소스
+                        ApiConstants.SWAGGER_UI_HTML_PATH,    // Swagger UI 메인
+                        ApiConstants.SWAGGER_RESOURCES_PATTERN, // Swagger 리소스
+                        ApiConstants.WEBJARS_PATTERN,         // WebJars (Swagger UI 의존성)
+                        ApiConstants.FAVICON_PATH,            // 파비콘
+                        ApiConstants.ERROR_PATH               // 에러 페이지
                     ).permitAll()
 
                     // 그 외 모든 요청은 인증 필요 (Bearer Token)

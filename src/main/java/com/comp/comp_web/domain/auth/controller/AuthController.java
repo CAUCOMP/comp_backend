@@ -2,6 +2,7 @@ package com.comp.comp_web.domain.auth.controller;
 
 import com.comp.comp_web.domain.auth.dto.*;
 import com.comp.comp_web.domain.auth.service.AuthService;
+import com.comp.comp_web.global.constants.ApiConstants;
 import com.comp.comp_web.global.response.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Auth", description = "인증 API")
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping(ApiConstants.AUTH_API_PATH)
 @RequiredArgsConstructor
 public class AuthController {
 
@@ -64,7 +65,7 @@ public class AuthController {
     @Operation(
         summary = "로그아웃",
         description = "사용자의 모든 Refresh Token을 삭제합니다. Authorization 헤더에 Bearer 토큰이 필요합니다.",
-        security = @SecurityRequirement(name = "Bearer Authentication")
+        security = @SecurityRequirement(name = ApiConstants.BEARER_AUTH_SCHEME)
     )
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(

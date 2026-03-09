@@ -1,5 +1,6 @@
 package com.comp.comp_web.config;
 
+import com.comp.comp_web.global.constants.ApiConstants;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
@@ -15,22 +16,22 @@ public class OpenApiConfig {
     public OpenAPI openAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("COMP Backend API")
-                .description("University Club Community Website API Documentation")
-                .version("v1.0.0")
+                .title(ApiConstants.API_TITLE)
+                .description(ApiConstants.API_DESCRIPTION)
+                .version(ApiConstants.API_VERSION)
                 .contact(new Contact()
-                    .name("COMP Team")
+                    .name(ApiConstants.API_CONTACT_NAME)
                 )
                 .license(new License()
-                    .name("Apache 2.0")
-                    .url("https://www.apache.org/licenses/LICENSE-2.0.html")))
+                    .name(ApiConstants.API_LICENSE_NAME)
+                    .url(ApiConstants.API_LICENSE_URL)))
             .components(new Components()
-                .addSecuritySchemes("Bearer Authentication",
+                .addSecuritySchemes(ApiConstants.BEARER_AUTH_SCHEME,
                     new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP)
                         .scheme("bearer")
-                        .bearerFormat("JWT")
-                        .description("JWT 토큰을 입력하세요 (Bearer 접두사 제외)")
+                        .bearerFormat(ApiConstants.BEARER_FORMAT)
+                        .description(ApiConstants.BEARER_AUTH_DESCRIPTION)
                 ));
     }
 }
