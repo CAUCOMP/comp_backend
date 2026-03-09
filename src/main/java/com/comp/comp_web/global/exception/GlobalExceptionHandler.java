@@ -28,8 +28,9 @@ public class GlobalExceptionHandler {
             ? ApiResponse.error(e.getErrorCode(), e.getDetail())
             : ApiResponse.error(e.getErrorCode());
 
+        // ErrorCode에 정의된 HttpStatus를 사용 (없으면 BAD_REQUEST가 기본값)
         return ResponseEntity
-            .status(HttpStatus.BAD_REQUEST)
+            .status(e.getErrorCode().getHttpStatus())
             .body(response);
     }
 
