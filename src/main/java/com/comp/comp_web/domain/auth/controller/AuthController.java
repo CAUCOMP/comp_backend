@@ -70,11 +70,6 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<ApiResponse<Void>> logout(
             @AuthenticationPrincipal Long userId) {
-        if (userId == null) {
-            throw new com.comp.comp_web.global.exception.BusinessException(
-                com.comp.comp_web.global.response.ErrorCode.AUTH_003
-            );
-        }
         authService.logout(userId);
         return ResponseEntity.ok(ApiResponse.success());
     }

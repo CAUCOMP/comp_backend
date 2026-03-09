@@ -69,6 +69,11 @@ public final class ApiConstants {
     public static final String AUTH_API_PATTERN = "/api/auth/**";
 
     /**
+     * 로그아웃 API 경로 (인증 필요)
+     */
+    public static final String AUTH_LOGOUT_PATH = "/api/auth/logout";
+
+    /**
      * OpenAPI 문서 경로 패턴
      */
     public static final String OPENAPI_DOCS_PATTERN = "/v3/api-docs/**";

@@ -1,6 +1,7 @@
 package com.comp.comp_web.domain.auth;
 
 import com.comp.comp_web.domain.auth.filter.JwtAuthenticationFilter;
+import com.comp.comp_web.domain.auth.handler.RestAuthenticationEntryPoint;
 import com.comp.comp_web.global.constants.ApiConstants;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
@@ -36,11 +38,21 @@ public class SecurityConfig {
                     .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
+                // 예외 처리 설정
+                .exceptionHandling(exception -> exception
+                    .authenticationEntryPoint(restAuthenticationEntryPoint)
+                )
+
                 // 요청 권한 설정
                 .authorizeHttpRequests(auth -> auth
+                    // ⚠️ 순서 중요: 더 구체적인 경로가 먼저 와야 함
+
+                    // 인증이 필요한 Auth API
+                    .requestMatchers(ApiConstants.AUTH_LOGOUT_PATH).authenticated()
+
                     // Public 엔드포인트 (인증 불필요)
                     .requestMatchers(
-                        ApiConstants.AUTH_API_PATTERN,        // 인증 관련 API
+                        ApiConstants.AUTH_API_PATTERN,        // 인증 관련 API (logout 제외)
                         ApiConstants.OPENAPI_DOCS_PATTERN,    // OpenAPI 문서
                         ApiConstants.OPENAPI_YAML_PATH,       // OpenAPI YAML
                         ApiConstants.SWAGGER_UI_PATTERN,      // Swagger UI 리소스
