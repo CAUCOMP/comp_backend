@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -44,17 +45,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = resolveToken(request);
 
             // 2. 토큰 검증
-            if (StringUtils.hasText(token) && jwtTokenProvider.validateToken(token)) {
-                // 3. Authentication 객체 생성
-                Authentication authentication = getAuthentication(token);
+            if (StringUtils.hasText(token)) {
+                if (jwtTokenProvider.validateToken(token)) {
+                    // 3. Authentication 객체 생성
+                    Authentication authentication = getAuthentication(token);
 
-                // 4. SecurityContext에 저장
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                log.debug("JWT 인증 성공: userId={}", jwtTokenProvider.getUserId(token));
+                    // 4. SecurityContext에 저장
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    log.debug("JWT 인증 성공: userId={}", jwtTokenProvider.getUserId(token));
+                } else {
+                    // 토큰이 유효하지 않음 - SecurityContext 클리어
+                    SecurityContextHolder.clearContext();
+                    log.debug("유효하지 않은 JWT 토큰");
+                }
             }
+        } catch (AuthenticationException e) {
+            // 인증 예외는 상위로 전파 (AuthenticationEntryPoint가 처리)
+            SecurityContextHolder.clearContext();
+            log.warn("JWT 인증 실패: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("JWT 인증 처리 중 오류 발생", e);
-            // 예외가 발생해도 필터 체인은 계속 진행 (인증 실패로 처리)
+            // 기타 예외 발생 시 SecurityContext 클리어
+            SecurityContextHolder.clearContext();
+            log.error("JWT 처리 중 예외 발생", e);
+            // 필터 체인 계속 진행 (인증 실패로 간주)
         }
 
         filterChain.doFilter(request, response);
