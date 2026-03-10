@@ -37,3 +37,7 @@ target/
 *.jar
 *.war
 *.zip
+
+# Environment Variables
+.env
+.env.local

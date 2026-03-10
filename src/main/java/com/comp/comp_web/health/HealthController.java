@@ -1,4 +1,4 @@
-package com.comp.comp_web.controller;
+package com.comp.comp_web.health;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
