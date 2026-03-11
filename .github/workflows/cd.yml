@@ -37,9 +37,8 @@ jobs:
         with:
           images: ${{ env.DOCKER_IMAGE_NAME }}
           tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest
+            type=sha,prefix=sha-
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -104,20 +103,6 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKER_IMAGE: ${{ env.DOCKER_IMAGE_NAME }}
         run: |
-          # docker-compose.prod.yml 파일 EC2로 전송
-          scp -i private_key.pem \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            docker-compose.prod.yml \
-            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/docker-compose.yml
-
-          # .env 파일 EC2로 전송
-          scp -i private_key.pem \
-            -o StrictHostKeyChecking=no \
-            -o UserKnownHostsFile=/dev/null \
-            .env.production \
-            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/.env
-
           # EC2에서 배포 실행
           ssh -i private_key.pem \
             -o StrictHostKeyChecking=no \
@@ -132,13 +117,17 @@ jobs:
             echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
 
             echo "=== 최신 이미지 pull ==="
+            echo "Pulling image: ${DOCKER_IMAGE}:latest"
             docker pull ${DOCKER_IMAGE}:latest
+
+            echo "=== 이미지 확인 ==="
+            docker images | grep comp-backend
 
             echo "=== 기존 컨테이너 중지 및 제거 ==="
             docker-compose down || true
 
             echo "=== 환경변수 확인 ==="
-            echo "DOCKERHUB_USERNAME exported from .env"
+            echo "Environment variables loaded from .env"
             export $(cat .env | grep -v '^#' | xargs)
 
             echo "=== 새 컨테이너 시작 ==="
@@ -166,15 +155,12 @@ jobs:
           echo "EC2 Host: ${{ env.EC2_HOST }}"
           echo "Health Check URL: http://${{ env.EC2_HOST }}:8080/api/health"
 
-          # 초기 대기 시간 (애플리케이션 시작)
           echo "애플리케이션 시작 대기 중... (30초)"
           sleep 30
 
-          # Health check 재시도 (최대 10회, 각 15초 간격)
           for i in {1..10}; do
             echo "=== Health check 시도 $i/10 ==="
 
-            # curl로 상세한 디버깅 정보 출력
             RESPONSE=$(curl -v -f --connect-timeout 10 --max-time 20 \
               http://${{ env.EC2_HOST }}:8080/api/health 2>&1) || true
 
@@ -187,26 +173,12 @@ jobs:
             echo "Health check 실패. 응답:"
             echo "$RESPONSE"
 
-            # EC2에서 컨테이너 상태 확인
             echo "=== EC2 컨테이너 상태 확인 ==="
             ssh -i private_key.pem \
               -o StrictHostKeyChecking=no \
               -o UserKnownHostsFile=/dev/null \
-              ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} << 'HEALTHCHECK'
-
-              echo "--- Docker 컨테이너 상태 ---"
-              docker ps -a
-
-              echo "--- Docker Compose 상태 ---"
-              docker-compose ps
-
-              echo "--- 최근 애플리케이션 로그 (최근 20줄) ---"
-              docker-compose logs --tail=20
-
-              echo "--- 포트 8080 확인 ---"
-              netstat -tlnp | grep 8080 || echo "포트 8080이 열려있지 않습니다"
-
-            HEALTHCHECK
+              ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} \
+              'docker ps -a && docker-compose ps && docker-compose logs --tail=20'
 
             if [ $i -lt 10 ]; then
               echo "15초 후 재시도..."
@@ -217,22 +189,11 @@ jobs:
           echo "❌ Health check 최종 실패"
           echo "=== 최종 디버깅 정보 ==="
 
-          # 최종 실패 시 전체 로그 출력
           ssh -i private_key.pem \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} << 'FINALCHECK'
-
-            echo "--- 전체 Docker 컨테이너 로그 ---"
-            docker-compose logs
-
-            echo "--- Docker 이미지 목록 ---"
-            docker images
-
-            echo "--- 환경변수 파일 확인 ---"
-            ls -la .env docker-compose.yml
-
-          FINALCHECK
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} \
+            'docker-compose logs && docker images && ls -la .env docker-compose.yml'
 
           exit 1
 
