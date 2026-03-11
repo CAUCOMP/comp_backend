@@ -113,6 +113,7 @@ export $(cat .env | grep -v '^#' | xargs)
 
 ## 🔄 CI/CD Pipeline
 
+### CI (Continuous Integration)
 dev 브랜치에 PR을 올리면 다음 단계가 자동으로 실행됩니다:
 
 1. **의존성 다운로드**: Gradle 캐시 + 빌드 단계에서 의존성 자동 다운로드
@@ -122,10 +123,19 @@ dev 브랜치에 PR을 올리면 다음 단계가 자동으로 실행됩니다:
 5. **Unit Tests**: `test` (H2 인메모리 DB로 빠른 테스트 실행)
 6. **Build**: `bootJar` (실행 가능한 JAR 파일 생성)
 
-### CI 워크플로우 상태
-모든 체크가 통과해야 PR을 머지할 수 있습니다.
-
 **참고**: CI 환경에서는 H2 인메모리 데이터베이스를 사용하여 테스트를 실행합니다. MySQL/Redis 서비스 컨테이너를 띄울 필요가 없어 빌드 속도가 빠릅니다.
+
+### CD (Continuous Deployment)
+main 또는 develop 브랜치에 push하면 자동으로 EC2에 배포됩니다:
+
+1. **Docker 이미지 빌드**: Multi-stage build로 최적화된 이미지 생성
+2. **Docker Hub에 푸시**: 이미지 태그 (`latest`, `브랜치명`, `브랜치-SHA`)
+3. **EC2 배포**: SSH로 접속하여 최신 이미지 pull 및 재시작
+4. **Health Check**: 배포 후 애플리케이션 상태 확인
+
+자세한 설정 방법은 다음 문서를 참조하세요:
+- [CD_PIPELINE_GUIDE.md](CD_PIPELINE_GUIDE.md) - 전체 배포 가이드
+- [GITHUB_SECRETS_SETUP.md](GITHUB_SECRETS_SETUP.md) - GitHub Actions Secrets 설정
 
 ## 📁 Project Structure
 ```
