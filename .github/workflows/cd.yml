@@ -1,0 +1,155 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  DOCKER_IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/comp-backend
+  EC2_HOST: ${{ secrets.EC2_HOST }}
+  EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Image digest
+        run: echo "Image pushed with tags - ${{ steps.meta.outputs.tags }}"
+
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create SSH key file
+        run: |
+          echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > private_key.pem
+          chmod 600 private_key.pem
+
+      - name: Create .env file
+        run: |
+          cat << EOF > .env.production
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD || '' }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          JWT_ACCESS_TOKEN_VALIDITY=${{ secrets.JWT_ACCESS_TOKEN_VALIDITY }}
+          JWT_REFRESH_TOKEN_VALIDITY=${{ secrets.JWT_REFRESH_TOKEN_VALIDITY }}
+          SERVER_PORT=8080
+          EOF
+
+      - name: Copy deployment files to EC2
+        run: |
+          scp -i private_key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            .env.production \
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/.env
+
+          scp -i private_key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            docker-compose.prod.yml \
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/docker-compose.yml
+
+      - name: Deploy to EC2
+        run: |
+          ssh -i private_key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} << 'ENDSSH'
+
+            # Docker Hub 로그인
+            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+            # 최신 이미지 pull
+            docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
+
+            # 기존 컨테이너 중지 및 제거
+            docker-compose down || true
+
+            # 새 컨테이너 시작
+            docker-compose up -d
+
+            # 사용하지 않는 이미지 정리
+            docker image prune -af
+
+            # 컨테이너 상태 확인
+            docker-compose ps
+
+            echo "✅ Deployment completed successfully!"
+          ENDSSH
+
+      - name: Health check
+        run: |
+          sleep 15
+          for i in {1..10}; do
+            if curl -f http://${{ env.EC2_HOST }}:8080/api/health; then
+              echo "✅ Health check passed"
+              exit 0
+            fi
+            echo "Waiting for application to start... ($i/10)"
+            sleep 10
+          done
+          echo "❌ Health check failed"
+          exit 1
+
+      - name: Cleanup
+        if: always()
+        run: rm -f private_key.pem .env.production
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ ${{ job.status }} == 'success' ]; then
+            echo "🎉 Deployment successful to EC2: ${{ env.EC2_HOST }}"
+          else
+            echo "❌ Deployment failed"
+          fi
+

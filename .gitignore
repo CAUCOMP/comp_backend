@@ -37,3 +37,13 @@ target/
 *.jar
 *.war
 *.zip
+
+# Environment Variables
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Docker
+*.pem
+private_key.pem
