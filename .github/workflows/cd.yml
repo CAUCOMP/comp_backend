@@ -99,17 +99,25 @@ jobs:
             ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/docker-compose.yml
 
       - name: Deploy to EC2
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          DOCKER_IMAGE: ${{ env.DOCKER_IMAGE_NAME }}
         run: |
           ssh -i private_key.pem \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
-            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} << 'ENDSSH'
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} \
+            "DOCKERHUB_USERNAME='${DOCKERHUB_USERNAME}' \
+             DOCKERHUB_TOKEN='${DOCKERHUB_TOKEN}' \
+             DOCKER_IMAGE='${DOCKER_IMAGE}' \
+             bash -s" << 'ENDSSH'
 
             # Docker Hub 로그인
-            echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+            echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
 
             # 최신 이미지 pull
-            docker pull ${{ env.DOCKER_IMAGE_NAME }}:latest
+            docker pull ${DOCKER_IMAGE}:latest
 
             # 기존 컨테이너 중지 및 제거
             docker-compose down || true
