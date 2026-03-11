@@ -104,6 +104,21 @@ jobs:
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           DOCKER_IMAGE: ${{ env.DOCKER_IMAGE_NAME }}
         run: |
+          # docker-compose.prod.yml 파일 EC2로 전송
+          scp -i private_key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            docker-compose.prod.yml \
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/docker-compose.yml
+
+          # .env 파일 EC2로 전송
+          scp -i private_key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            .env.production \
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }}:/home/${{ env.EC2_USERNAME }}/.env
+
+          # EC2에서 배포 실행
           ssh -i private_key.pem \
             -o StrictHostKeyChecking=no \
             -o UserKnownHostsFile=/dev/null \
@@ -113,39 +128,112 @@ jobs:
              DOCKER_IMAGE='${DOCKER_IMAGE}' \
              bash -s" << 'ENDSSH'
 
-            # Docker Hub 로그인
+            echo "=== Docker Hub 로그인 ==="
             echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
 
-            # 최신 이미지 pull
+            echo "=== 최신 이미지 pull ==="
             docker pull ${DOCKER_IMAGE}:latest
 
-            # 기존 컨테이너 중지 및 제거
+            echo "=== 기존 컨테이너 중지 및 제거 ==="
             docker-compose down || true
 
-            # 새 컨테이너 시작
+            echo "=== 환경변수 확인 ==="
+            echo "DOCKERHUB_USERNAME exported from .env"
+            export $(cat .env | grep -v '^#' | xargs)
+
+            echo "=== 새 컨테이너 시작 ==="
             docker-compose up -d
 
-            # 사용하지 않는 이미지 정리
+            echo "=== 컨테이너 시작 대기 (30초) ==="
+            sleep 30
+
+            echo "=== 컨테이너 상태 확인 ==="
+            docker-compose ps
+
+            echo "=== 컨테이너 로그 확인 (최근 50줄) ==="
+            docker-compose logs --tail=50
+
+            echo "=== 사용하지 않는 이미지 정리 ==="
             docker image prune -af
 
-            # 컨테이너 상태 확인
-            docker-compose ps
 
             echo "✅ Deployment completed successfully!"
           ENDSSH
 
       - name: Health check
         run: |
-          sleep 15
+          echo "=== Health Check 시작 ==="
+          echo "EC2 Host: ${{ env.EC2_HOST }}"
+          echo "Health Check URL: http://${{ env.EC2_HOST }}:8080/api/health"
+
+          # 초기 대기 시간 (애플리케이션 시작)
+          echo "애플리케이션 시작 대기 중... (30초)"
+          sleep 30
+
+          # Health check 재시도 (최대 10회, 각 15초 간격)
           for i in {1..10}; do
-            if curl -f http://${{ env.EC2_HOST }}:8080/api/health; then
-              echo "✅ Health check passed"
+            echo "=== Health check 시도 $i/10 ==="
+
+            # curl로 상세한 디버깅 정보 출력
+            RESPONSE=$(curl -v -f --connect-timeout 10 --max-time 20 \
+              http://${{ env.EC2_HOST }}:8080/api/health 2>&1) || true
+
+            if echo "$RESPONSE" | grep -q "HTTP.*200"; then
+              echo "✅ Health check 성공!"
+              echo "$RESPONSE"
               exit 0
             fi
-            echo "Waiting for application to start... ($i/10)"
-            sleep 10
+
+            echo "Health check 실패. 응답:"
+            echo "$RESPONSE"
+
+            # EC2에서 컨테이너 상태 확인
+            echo "=== EC2 컨테이너 상태 확인 ==="
+            ssh -i private_key.pem \
+              -o StrictHostKeyChecking=no \
+              -o UserKnownHostsFile=/dev/null \
+              ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} << 'HEALTHCHECK'
+
+              echo "--- Docker 컨테이너 상태 ---"
+              docker ps -a
+
+              echo "--- Docker Compose 상태 ---"
+              docker-compose ps
+
+              echo "--- 최근 애플리케이션 로그 (최근 20줄) ---"
+              docker-compose logs --tail=20
+
+              echo "--- 포트 8080 확인 ---"
+              netstat -tlnp | grep 8080 || echo "포트 8080이 열려있지 않습니다"
+
+            HEALTHCHECK
+
+            if [ $i -lt 10 ]; then
+              echo "15초 후 재시도..."
+              sleep 15
+            fi
           done
-          echo "❌ Health check failed"
+
+          echo "❌ Health check 최종 실패"
+          echo "=== 최종 디버깅 정보 ==="
+
+          # 최종 실패 시 전체 로그 출력
+          ssh -i private_key.pem \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            ${{ env.EC2_USERNAME }}@${{ env.EC2_HOST }} << 'FINALCHECK'
+
+            echo "--- 전체 Docker 컨테이너 로그 ---"
+            docker-compose logs
+
+            echo "--- Docker 이미지 목록 ---"
+            docker images
+
+            echo "--- 환경변수 파일 확인 ---"
+            ls -la .env docker-compose.yml
+
+          FINALCHECK
+
           exit 1
 
       - name: Cleanup
