@@ -30,19 +30,19 @@ public class User {
     @Column(length = 20)
     private Role role;
 
-    @Column(name = "refreshToken", length = 500)
+    @Column(name = "refresh_token", length = 500)
     private String refreshToken;
 
-    @Column(name = "isVerified")
+    @Column(name = "is_verified")
     private Boolean isVerified;
 
     @Column(length = 20)
     private String status;
 
-    @Column(name = "createdAt")
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "studyId", nullable = false)
+    @Column(name = "study_id", nullable = false)
     private Long studyId;
 
 

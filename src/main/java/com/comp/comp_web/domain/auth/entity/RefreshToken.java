@@ -22,19 +22,19 @@ public class RefreshToken {
     @Column(length = 255)
     private String id;
 
-    @Column(name = "userId", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "tokenHash", nullable = false, length = 255)
+    @Column(name = "token_hash", nullable = false, length = 255)
     private String tokenHash;
 
-    @Column(name = "expiresAt", nullable = false)
+    @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 
-    @Column(name = "revokedAt")
+    @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
-    @Column(name = "createdAt", nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Builder
