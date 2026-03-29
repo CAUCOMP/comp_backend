@@ -74,6 +74,11 @@ public final class ApiConstants {
     public static final String AUTH_LOGOUT_PATH = "/api/auth/logout";
 
     /**
+     * 스터디 관련 API 기본 경로
+     */
+    public static final String STUDY_API_PATH = "/study";
+
+    /**
      * Health Check API 경로 패턴 (인증 불필요)
      */
     public static final String HEALTH_API_PATTERN = "/api/health";
