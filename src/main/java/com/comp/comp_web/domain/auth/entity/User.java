@@ -61,4 +61,8 @@ public class User {
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
     }
+
+    public void updateStudyId(Long studyId) {
+        this.studyId = studyId;
+    }
 }

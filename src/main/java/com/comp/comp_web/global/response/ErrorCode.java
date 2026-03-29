@@ -31,6 +31,8 @@ public enum ErrorCode {
     STUDY_003("STUDY_003", "스터디 출석 처리에 실패했습니다.", HttpStatus.BAD_REQUEST),
     STUDY_004("STUDY_004", "잘못된 인증 코드입니다.", HttpStatus.BAD_REQUEST),
     STUDY_005("STUDY_005", "과제 제출 기한이 지났습니다.", HttpStatus.BAD_REQUEST),
+    STUDY_006("STUDY_006", "스터디 그룹원 정보가 올바르지 않습니다.", HttpStatus.BAD_REQUEST),
+    STUDY_007("STUDY_007", "스터디 조에 배정되지 않은 사용자입니다.", HttpStatus.BAD_REQUEST),
 
     // 프로젝트 관련 에러 (PROJECT_xxx)
     PROJECT_001("PROJECT_001", "프로젝트를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
