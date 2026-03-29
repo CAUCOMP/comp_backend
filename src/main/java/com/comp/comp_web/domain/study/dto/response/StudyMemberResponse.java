@@ -21,4 +21,3 @@ public class StudyMemberResponse {
             .build();
     }
 }
-

@@ -14,4 +14,3 @@ public class GroupMemberAttendanceStatus {
     private Boolean late;
     private LocalDateTime attendedAt;
 }
-

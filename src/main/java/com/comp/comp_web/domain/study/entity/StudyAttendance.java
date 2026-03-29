@@ -60,4 +60,3 @@ public class StudyAttendance {
         this.attendedAt = attendedAt;
     }
 }
-

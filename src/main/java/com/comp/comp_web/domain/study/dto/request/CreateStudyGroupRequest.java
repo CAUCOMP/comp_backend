@@ -28,4 +28,3 @@ public class CreateStudyGroupRequest {
     @NotEmpty
     private List<Long> memberIds;
 }
-

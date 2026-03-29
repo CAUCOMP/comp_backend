@@ -8,4 +8,3 @@ import java.util.Optional;
 public interface StudyRecordRepository extends JpaRepository<StudyRecord, Integer> {
     Optional<StudyRecord> findByGroupIdAndWeekNumber(Integer groupId, Integer weekNumber);
 }
-

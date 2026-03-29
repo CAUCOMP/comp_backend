@@ -15,4 +15,3 @@ public class PatchStudyRequest {
     private LocalDateTime studyTime;
     private List<Long> memberIds;
 }
-

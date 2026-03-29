@@ -76,4 +76,3 @@ public class StudyController {
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
-

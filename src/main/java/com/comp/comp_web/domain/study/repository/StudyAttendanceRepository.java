@@ -14,4 +14,3 @@ public interface StudyAttendanceRepository extends JpaRepository<StudyAttendance
 
     Optional<StudyAttendance> findTopByStudentIdInOrderByWeekNumberDesc(Collection<Long> studentIds);
 }
-

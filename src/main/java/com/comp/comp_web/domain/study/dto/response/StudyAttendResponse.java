@@ -16,4 +16,3 @@ public class StudyAttendResponse {
     private LocalDateTime attendedAt;
     private String attendanceImageUrl;
 }
-

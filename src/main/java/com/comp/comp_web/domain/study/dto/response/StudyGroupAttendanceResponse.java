@@ -15,4 +15,3 @@ public class StudyGroupAttendanceResponse {
     private Integer lateCount;
     private List<GroupMemberAttendanceStatus> members;
 }
-

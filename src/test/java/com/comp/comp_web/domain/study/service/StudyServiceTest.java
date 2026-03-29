@@ -132,4 +132,3 @@ class StudyServiceTest {
         assertEquals(7, studyService.createStudyGroup(1L, request).getGroupId());
     }
 }
-
